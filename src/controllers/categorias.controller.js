@@ -3,6 +3,7 @@ import {
     obtenerCategoriaPorId
 } from "../services/categorias.service.js";
 
+// listar categorias contemplando errores 
 export async function listarCategorias(req, res) {
     try {
         const categorias = await obtenerCategorias();
@@ -17,6 +18,7 @@ export async function listarCategorias(req, res) {
     }
 }
 
+// busca una categoria contemplando errores 
 export async function buscarCategoriaPorId(req, res) {
     const { id } = req.params;
 
