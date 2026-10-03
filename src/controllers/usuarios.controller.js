@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { crearUsuario, obtenerUsuarioPorEmail } from "../services/usuarios.service.js";
+import { generarToken } from "../config/jwt.js";
 
 export async function registrarUsuario(req, res) {
     try {
@@ -62,8 +63,11 @@ export async function iniciarSesion(req, res) {
             });
         }
 
+        const token = generarToken(usuario);
+
         res.json({
             mensaje: "Inicio de sesión exitoso",
+            token: token,
             usuario: {
                 id: usuario.id,
                 nombre: usuario.nombre,
