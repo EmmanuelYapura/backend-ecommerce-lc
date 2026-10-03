@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { crearUsuario } from "../services/usuarios.service.js";
+import { crearUsuario, obtenerUsuarioPorEmail } from "../services/usuarios.service.js";
 
 export async function registrarUsuario(req, res) {
     try {
@@ -32,6 +32,52 @@ export async function registrarUsuario(req, res) {
 
         res.status(500).json({
             error: "Error al registrar el usuario"
+        });
+    }
+}
+
+export async function iniciarSesion(req, res) {
+    try {
+        const { email, pw } = req.body;
+
+        const usuario = await obtenerUsuarioPorEmail(email);
+
+        if (!usuario) {
+            return res.status(401).json({
+                error: "Email o contraseña incorrectos"
+            });
+        }
+
+        const pwCorrecta = await bcrypt.compare(pw, usuario.pw);
+
+        if (!pwCorrecta) {
+            return res.status(401).json({
+                error: "Email o contraseña incorrectos"
+            });
+        }
+
+        if (!usuario.activo) {
+            return res.status(403).json({
+                error: "El usuario está inactivo"
+            });
+        }
+
+        res.json({
+            mensaje: "Inicio de sesión exitoso",
+            usuario: {
+                id: usuario.id,
+                nombre: usuario.nombre,
+                apellido: usuario.apellido,
+                email: usuario.email,
+                telefono: usuario.telefono,
+                rol: usuario.rol
+            }
+        });
+    } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+
+        res.status(500).json({
+            error: "Error al iniciar sesión"
         });
     }
 }
