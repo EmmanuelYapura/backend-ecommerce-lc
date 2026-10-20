@@ -98,3 +98,37 @@ export async function crearPedidoDesdeCarrito(usuarioId) {
         });
     });
 }
+
+export async function obtenerPedidosPorUsuario(usuarioId) {
+    return await prisma.pedidos.findMany({
+        where: {
+            usuario_id: usuarioId
+        },
+        orderBy: {
+            fecha_creacion: "desc"
+        },
+        include: {
+            detalle_pedidos: {
+                include: {
+                    productos: true
+                }
+            }
+        }
+    });
+}
+
+export async function obtenerPedidoPorId(usuarioId, pedidoId) {
+    return await prisma.pedidos.findFirst({
+        where: {
+            id: pedidoId,
+            usuario_id: usuarioId
+        },
+        include: {
+            detalle_pedidos: {
+                include: {
+                    productos: true
+                }
+            }
+        }
+    });
+}
