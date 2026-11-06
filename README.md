@@ -143,8 +143,53 @@ Todos los endpoints utilizan como prefijo:
 
 | Método | Endpoint | Descripción |
 |---|---|---|
-| GET | `/api/productos` | Obtener los productos. |
+| GET | `/api/productos` | Obtener los productos activos. |
 | GET | `/api/productos/:id` | Obtener un producto por su identificador. |
+
+El listado devuelve únicamente los productos con `activo = true`. Un administrador autenticado puede agregar `?incluirInactivos=true` para recibir también los productos dados de baja.
+
+#### Administración del catálogo
+
+Estos endpoints requieren un JWT cuyo usuario tenga el rol `ADMIN`. Un usuario autenticado sin ese rol recibe `403`.
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/api/productos` | Alta de producto. |
+| PUT | `/api/productos/:id` | Modificación de los datos del producto. |
+| PATCH | `/api/productos/:id/stock` | Ajustar el stock por diferencia. |
+| PATCH | `/api/productos/:id/activo` | Dar de baja o rehabilitar un producto. |
+| DELETE | `/api/productos/:id` | Baja lógica del producto. |
+
+**Alta (`POST /api/productos`)**
+
+```json
+{
+  "nombre": "Placa de video RTX 5070",
+  "descripcion": "12 GB GDDR7",
+  "precio": 980000,
+  "stock": 5,
+  "img": "https://.../rtx5070.png",
+  "categoria_id": "uuid-de-la-categoria"
+}
+```
+
+`nombre`, `precio` y `stock` son obligatorios. `descripcion`, `img` y `categoria_id` son opcionales. El precio debe ser mayor a cero, el stock un entero mayor o igual a cero y la categoría debe existir.
+
+**Modificación (`PUT /api/productos/:id`)**
+
+Acepta los mismos campos que el alta, todos opcionales, y aplica solo los que se envían. El stock no se modifica por este endpoint: usar `PATCH /api/productos/:id/stock`.
+
+**Ajuste de stock (`PATCH /api/productos/:id/stock`)**
+
+```json
+{ "cantidad": 10 }
+```
+
+La cantidad es una diferencia: positiva para un ingreso de mercadería y negativa para un ajuste por rotura o faltante. Se rechaza con `400` si el resultado quedaría en negativo. La operación se realiza dentro de una transacción.
+
+**Baja lógica (`DELETE /api/productos/:id` y `PATCH /api/productos/:id/activo`)**
+
+El registro nunca se borra de la base, porque los pedidos históricos y los ítems de carrito lo referencian. El `DELETE` marca `activo = false`; el `PATCH` permite enviar `{ "activo": true }` para rehabilitarlo.
 
 ### Categorías
 
@@ -152,6 +197,44 @@ Todos los endpoints utilizan como prefijo:
 |---|---|---|
 | GET | `/api/categorias` | Obtener las categorías. |
 | GET | `/api/categorias/:id` | Obtener una categoría por su identificador. |
+
+#### Administración de categorías
+
+Estos endpoints requieren un JWT cuyo usuario tenga el rol `ADMIN`.
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/api/categorias` | Alta de categoría. |
+| PUT | `/api/categorias/:id` | Modificación de la categoría. |
+| DELETE | `/api/categorias/:id` | Baja de la categoría. |
+
+**Alta (`POST /api/categorias`)**
+
+```json
+{
+  "nombre": "Placas de video",
+  "descripcion": "GPUs para gaming y diseño"
+}
+```
+
+`nombre` es obligatorio (entre 3 y 100 caracteres) y `descripcion` es opcional. No se permiten dos categorías con el mismo nombre, sin distinguir mayúsculas: el intento devuelve `409`.
+
+**Modificación (`PUT /api/categorias/:id`)**
+
+Acepta los mismos campos, todos opcionales, y aplica solo los que se envían.
+
+**Baja (`DELETE /api/categorias/:id`)**
+
+La baja es física, pero solo se permite cuando la categoría no tiene ningún producto asociado. Si todavía los tiene, responde `409` indicando cuántos son:
+
+```json
+{
+  "error": "No se puede eliminar: la categoría tiene 12 producto(s) asociado(s). Reasignalos a otra categoría antes de eliminarla.",
+  "cantidad_productos": 12
+}
+```
+
+El recuento incluye los productos dados de baja, porque la referencia en la base de datos existe de todos modos. Para liberar la categoría hay que reasignar esos productos con `PUT /api/productos/:id` (enviando otro `categoria_id`, o `null` para dejarlos sin categoría).
 
 ### Carrito
 
@@ -284,4 +367,6 @@ Las pruebas realizadas incluyen:
 
 El backend cuenta con las funcionalidades principales del proceso de compra y se encuentra preparado para su integración con el frontend.
 
-Algunas funcionalidades adicionales, como la modificación de perfiles y la administración de productos y categorías, forman parte de las tareas pendientes del desarrollo general del proyecto.
+La administración del catálogo se encuentra implementada y protegida por rol: alta, modificación, ajuste de stock y baja lógica de productos, y alta, modificación y baja de categorías.
+
+Algunas funcionalidades adicionales, como la modificación de perfiles de usuario, forman parte de las tareas pendientes del desarrollo general del proyecto.
