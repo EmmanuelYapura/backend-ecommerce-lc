@@ -32,3 +32,31 @@ export function autenticarUsuario(req, res, next) {
         });
     }
 }
+
+// Identifica al usuario si envió un token válido, pero deja pasar las
+// solicitudes anónimas. Sirve para rutas públicas que muestran información
+// adicional a los administradores.
+export function autenticacionOpcional(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return next();
+    }
+
+    const [tipo, token] = authHeader.split(" ");
+
+    if (tipo !== "Bearer" || !token) {
+        return next();
+    }
+
+    try {
+        req.usuario = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+    } catch (error) {
+        // Token inválido o expirado: se continúa como visitante anónimo.
+    }
+
+    next();
+}
