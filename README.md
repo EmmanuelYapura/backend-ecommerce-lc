@@ -368,5 +368,3 @@ Las pruebas realizadas incluyen:
 El backend cuenta con las funcionalidades principales del proceso de compra y se encuentra preparado para su integración con el frontend.
 
 La administración del catálogo se encuentra implementada y protegida por rol: alta, modificación, ajuste de stock y baja lógica de productos, y alta, modificación y baja de categorías.
-
-Algunas funcionalidades adicionales, como la modificación de perfiles de usuario, forman parte de las tareas pendientes del desarrollo general del proyecto.
