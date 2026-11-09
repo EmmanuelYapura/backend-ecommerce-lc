@@ -104,9 +104,12 @@ JWT_SECRET=
 MERCADOPAGO_ACCESS_TOKEN=
 MERCADOPAGO_WEBHOOK_SECRET=
 MERCADOPAGO_NOTIFICATION_URL=
+FRONTEND_URL=
 ```
 
 Completar las variables con las credenciales correspondientes.
+
+`FRONTEND_URL` es la direccion publica del frontend y se usa para armar las URLs de retorno de Mercado Pago. En desarrollo suele ser `http://localhost:5173`. Si no se define, se utiliza la URL del sitio desplegado.
 
 **Importante:** nunca subir el archivo `.env` ni publicar credenciales privadas en el repositorio.
 
@@ -271,6 +274,18 @@ El pedido se genera inicialmente con estado `PENDIENTE`.
 La creación de preferencias requiere autenticación mediante JWT.
 
 El endpoint de webhook es utilizado por Mercado Pago y no debe ser invocado directamente desde el frontend.
+
+### Retorno despues del pago
+
+La preferencia se crea con `back_urls` y `auto_return`, de modo que al terminar de pagar Mercado Pago devuelve al comprador a:
+
+```text
+<FRONTEND_URL>/pago/resultado
+```
+
+Las tres situaciones (`success`, `failure` y `pending`) apuntan a la misma pantalla. Mercado Pago agrega sus propios parametros a esa URL, entre ellos `external_reference` con el identificador del pedido. El frontend usa ese identificador para consultar `GET /api/pedidos/:id` y mostrar el estado real del pedido, sin confiar en los parametros de la URL, que el usuario puede modificar.
+
+Como el webhook puede llegar unos segundos despues del retorno, la pantalla reintenta la consulta mientras el pedido siga en `PENDIENTE` y Mercado Pago haya informado el pago como aprobado.
 
 ## Autenticación
 

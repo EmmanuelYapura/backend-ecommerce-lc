@@ -10,6 +10,16 @@ const preferencia = new Preference(clienteMercadoPago);
 const pagoMercadoPago = new Payment(clienteMercadoPago);
 
 
+// URL pública del frontend, usada para armar las direcciones de retorno.
+// Mercado Pago las rechaza si no son absolutas, así que se normaliza la barra
+// final para no terminar con "//pago/resultado".
+function obtenerUrlDelFrontend() {
+    const url = process.env.FRONTEND_URL || "https://zerolag-xi.vercel.app";
+
+    return url.replace(/\/+$/, "");
+}
+
+
 export async function consultarPagoMercadoPago(pagoId) {
     const resultado = await pagoMercadoPago.get({
         id: pagoId
@@ -59,11 +69,24 @@ export async function crearPreferenciaDePago(usuarioId, pedidoId) {
         currency_id: "ARS"
     }));
 
+    // A donde vuelve el comprador cuando termina de pagar. Las tres
+    // situaciones usan la misma pantalla: el frontend consulta el estado real
+    // del pedido en lugar de confiar en lo que llega por la URL.
+    const urlRetorno = `${obtenerUrlDelFrontend()}/pago/resultado`;
+
     const resultado = await preferencia.create({
         body: {
             items,
             external_reference: pedido.id,
             notification_url: process.env.MERCADOPAGO_NOTIFICATION_URL,
+            back_urls: {
+                success: urlRetorno,
+                failure: urlRetorno,
+                pending: urlRetorno
+            },
+            // Vuelve solo al sitio cuando el pago se aprueba, sin que el
+            // comprador tenga que tocar "Volver al sitio".
+            auto_return: "approved",
             metadata: {
                 pedido_id: pedido.id,
                 usuario_id: usuarioId
