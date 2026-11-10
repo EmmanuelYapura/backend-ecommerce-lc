@@ -41,6 +41,98 @@ backend-ecommerce-lc/
 └── README.md
 ```
 
+
+### Modelo de datos y relaciones
+
+El siguiente diagrama representa la estructura de la base de datos y las relaciones entre las principales entidades del sistema.
+
+```mermaid
+erDiagram
+    USUARIO ||--|| CARRITO : tiene
+    USUARIO ||--o{ PEDIDO : realiza
+
+    CATEGORIA ||--o{ PRODUCTO : contiene
+
+    CARRITO ||--o{ CARRITO_ITEMS : contiene
+    PRODUCTO ||--o{ CARRITO_ITEMS : referencia
+
+    PEDIDO ||--|{ DETALLE_PEDIDOS : contiene
+    PRODUCTO ||--o{ DETALLE_PEDIDOS : referencia
+
+    PEDIDO ||--|| PAGO : registra
+
+    USUARIO {
+        uuid id PK
+        string nombre
+        string apellido
+        string email
+        string pw
+        string telefono
+        string rol
+        datetime fechaRegistro
+        boolean activo
+    }
+
+    CARRITO {
+        uuid id PK
+        uuid usuario_id FK
+        datetime fechaCreacion
+        datetime fechaActualizacion
+    }
+
+    CATEGORIA {
+        uuid id PK
+        string nombre
+        string descripcion
+    }
+
+    PRODUCTO {
+        uuid id PK
+        string nombre
+        string descripcion
+        decimal precio
+        string img
+        integer stock
+        uuid categoria_id FK
+        boolean activo
+        datetime fechaCreacion
+    }
+
+    CARRITO_ITEMS {
+        uuid id PK
+        uuid carrito_id FK
+        uuid producto_id FK
+        integer cantidad
+    }
+
+    PEDIDO {
+        uuid id PK
+        uuid usuario_id FK
+        datetime fechaCreacion
+        decimal total
+        string estado
+    }
+
+    DETALLE_PEDIDOS {
+        uuid id PK
+        uuid pedido_id FK
+        uuid producto_id FK
+        integer cantidad
+        decimal precioUnitario
+        decimal subtotal
+    }
+
+    PAGO {
+        uuid id PK
+        uuid pedido_id FK
+        string mercadopagoId
+        string estado
+        decimal monto
+        datetime fechaCreacion
+        datetime fechaActualizacion
+    }
+```
+
 ### Responsabilidades
 
 - **Routes:** definen los endpoints y los middlewares asociados.
